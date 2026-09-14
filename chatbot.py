@@ -72,8 +72,15 @@ while True:
         )
     )
 
-    
-    print(response)
+    for part in response.candidates[0].content.parts:
+
+        if part.function_call:
+
+            function_call = part.function_call
+
+            print("Tool requested:")
+            print(function_call.name)
+            print(function_call.args)
 
     # # Store Gemini response
     # conversation_history.append(
