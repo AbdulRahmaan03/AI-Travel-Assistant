@@ -78,9 +78,19 @@ while True:
 
             function_call = part.function_call
 
+            if function_call.name == "search_flights":
+
+                result = search_flights(
+                    origin=function_call.args["origin"],
+                    destination=function_call.args["destination"],
+                    date=function_call.args["date"]
+                )
+
             print("Tool requested:")
             print(function_call.name)
-            print(function_call.args)
+
+            print("Tool result:")            
+            print(result)
 
     # # Store Gemini response
     # conversation_history.append(
