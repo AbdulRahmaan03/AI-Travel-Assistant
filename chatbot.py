@@ -72,12 +72,24 @@ while True:
         )
     )
 
+    # Store Gemini response
+    conversation_history.append(
+        types.Content(
+            role="model",
+            parts=response.candidates[0].content.parts
+        )
+    )
+
+
+    # Check whether Gemini requested a tool 
     for part in response.candidates[0].content.parts:
 
         if part.function_call:
 
             function_call = part.function_call
 
+
+            # Execute the requested Python function
             if function_call.name == "search_flights":
 
                 result = search_flights(
@@ -86,18 +98,36 @@ while True:
                     date=function_call.args["date"]
                 )
 
-            print("Tool requested:")
-            print(function_call.name)
+                # print("Tool requested:")
+                # print(function_call.name)
 
-            print("Tool result:")            
-            print(result)
+                # print("Tool result:")            
+                # print(result)
 
-    # # Store Gemini response
-    # conversation_history.append(
-    #         types.Content(
-    #             role="model",
-    #             parts=types.Part.from_text(text=response.text)
-    #         )
-    #     )
 
-    # print(f"Agent: {response.text}\n")
+                # Give the tool result back to Gemini
+                tool_response = types.Part.from_function_response(
+                    name=function_call.name,
+                    response={
+                        "result": result
+                    }
+                )
+
+                # Store tool response
+                conversation_history.append(
+                        types.Content(
+                            role="user",
+                            parts=[tool_response]
+                        )
+                    )
+
+                # Ask Gemini to formulate the final answer
+                final_response = client.models.generate_content(
+                    model = "gemini-3.5-flash-lite",
+                    contents=conversation_history,
+                    config = types.GenerateContentConfig(
+                        tools=[flight_tool]
+                    )
+                )
+
+                print(f"Agent: {final_response.text}\n")
