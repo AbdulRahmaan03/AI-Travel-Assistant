@@ -2,10 +2,42 @@ import os
 
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
+
+from tools import search_flights
 
 load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+
+search_flights_declation = types.FunctionDeclaration(
+    name='search_flights',
+    description='Search for flights between two airports on a specific date.',
+    parameters=types.Schema(
+        type = "object",
+        properties = {
+            "origin": types.Schema(
+                type="string",
+                description='Departure airport code, for example DXB.'
+            ),
+            "destination": types.Schema(
+                type="string",
+                description="Arrival airport code, for example LHR."
+            ),
+            "date": types.Schema(
+                type="string",
+                description="Travel date in YYYY-MM-DD format."
+            )
+        },
+        required=["origin", "destination", "date"]
+    )
+)
+
+
+flight_tool = types.Tool(
+    function_declarations=[search_flights_declation]
+)
 
 
 print("Travel AI Assistant")
@@ -23,28 +55,32 @@ while True:
 
     # Store user_message to conversation_history
     conversation_history.append(
-        {
-            "role": "user",
-            "parts": [
-                {"text": user_message}
+        types.Content(
+            role= "user",
+            parts= [
+                types.Part.from_text(text=user_message)
             ]
-        }
+        )
     )
 
     # Get Gemini response
     response = client.models.generate_content(
         model="gemini-3.5-flash-lite",
-        contents=conversation_history
+        contents=conversation_history,
+        config=types.GenerateContentConfig(
+            tools=[flight_tool]
+        )
     )
 
-    # Store Gemini response
-    conversation_history.append(
-            {
-                "role": "model",
-                "parts": [
-                    {"text": response.text}
-                ]
-            }
-        )
+    
+    print(response)
 
-    print(f"Agent: {response.text}\n")
+    # # Store Gemini response
+    # conversation_history.append(
+    #         types.Content(
+    #             role="model",
+    #             parts=types.Part.from_text(text=response.text)
+    #         )
+    #     )
+
+    # print(f"Agent: {response.text}\n")
