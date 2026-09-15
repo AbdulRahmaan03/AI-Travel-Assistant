@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from tools import search_flights
+from tools import search_flights, search_hotels
 
 from datetime import date
 
@@ -24,13 +24,15 @@ Today's date is {today}.
 
 Rules:
 - If the user gives a travel date without a year, assume the next upcoming occurrence.
-- Never invent flight information.
-- Use the flight search tool when flight information is required.
-- Only state information that is present in the tool result.
+- Use the available travel tools when flight or hotel information is required.
+- Never invent travel information.
+- Only state information that is present in the tool results.
+- Use search_flights for flight searches.
+- Use search_hotels for hotel searches.
 """
 
 
-search_flights_declation = types.FunctionDeclaration(
+search_flights_declaration = types.FunctionDeclaration(
     name='search_flights',
     description='Search for flights between two airports on a specific date.',
     parameters=types.Schema(
@@ -54,13 +56,38 @@ search_flights_declation = types.FunctionDeclaration(
 )
 
 
-flight_tool = types.Tool(
-    function_declarations=[search_flights_declation]
+search_hotels_declaration = types.FunctionDeclaration(
+    name="search_hotels",
+    description="Search for hotels in a city for specific check-in and check-out dates.",
+    parameters=types.Schema(
+        type="OBJECT",
+        properties={
+            "city": types.Schema(
+                type="STRING",
+                description="City where the hotel is located, for example London."
+            ),
+            "check_in": types.Schema(
+                type="STRING",
+                description="Hotel check-in date in YYYY-MM-DD format."
+            ),
+            "check_out": types.Schema(
+                type="STRING",
+                description="Hotel check-out date in YYYY-MM-DD format."
+            )
+        },
+        required=["city", "check_in", "check_out"]
+    )
+)
+
+travel_tools = types.Tool(
+    function_declarations=[search_flights_declaration,
+                           search_hotels_declaration]
 )
 
 
 available_tools = {
-    "search_flights": search_flights
+    "search_flights": search_flights,
+    "search_hotels": search_hotels
 }
 
 
@@ -93,7 +120,7 @@ while True:
         model="gemini-3.5-flash-lite",
         contents=conversation_history,
         config=types.GenerateContentConfig(
-            tools=[flight_tool],
+            tools=[travel_tools],
             system_instruction=system_instruction
         )
     )
@@ -167,7 +194,7 @@ while True:
                 model = "gemini-3.5-flash-lite",
                 contents=conversation_history,
                 config = types.GenerateContentConfig(
-                    tools=[flight_tool],
+                    tools=[travel_tools],
                     system_instruction=system_instruction
                 )
             )

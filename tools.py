@@ -29,3 +29,31 @@ def search_flights(origin, destination, date):
         }
     ]
     return flights
+
+
+def search_hotels(city, check_in, check_out):
+    hotels = [
+        {
+            "name": "Hilton London Kensington",
+            "city": "London",
+            "price_per_night": 650,
+            "currency": "AED",
+            "rating": 4.2
+        },
+        {
+            "name": "Premier Inn London City",
+            "city": "London",
+            "price_per_night": 420,
+            "currency": "AED",
+            "rating": 4.0
+        },
+        {
+            "name": "The Savoy",
+            "city": "London",
+            "price_per_night": 1450,
+            "currency": "AED",
+            "rating": 4.8
+        }
+    ]
+
+    return hotels
