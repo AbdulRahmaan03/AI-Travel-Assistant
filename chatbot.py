@@ -6,21 +6,27 @@ from google.genai import types
 
 from tools import search_flights
 
+from datetime import date
+
+
+
 load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-system_instruction = """
+today = date.today().isoformat()
+
+system_instruction = f"""
 You are a helpful travel booking assistant.
 
-The current date is 2026-09-15.
+Today's date is {today}.
 
-When the user provides a date without a year,
-assume the next upcoming occurrence of that date.
-
-Never invent flight information.
-Use the available flight search tool when flight information is required.
+Rules:
+- If the user gives a travel date without a year, assume the next upcoming occurrence.
+- Never invent flight information.
+- Use the flight search tool when flight information is required.
+- Only state information that is present in the tool result.
 """
 
 
