@@ -11,6 +11,19 @@ load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
+system_instruction = """
+You are a helpful travel booking assistant.
+
+The current date is 2026-09-15.
+
+When the user provides a date without a year,
+assume the next upcoming occurrence of that date.
+
+Never invent flight information.
+Use the available flight search tool when flight information is required.
+"""
+
+
 search_flights_declation = types.FunctionDeclaration(
     name='search_flights',
     description='Search for flights between two airports on a specific date.',
@@ -68,7 +81,8 @@ while True:
         model="gemini-3.5-flash-lite",
         contents=conversation_history,
         config=types.GenerateContentConfig(
-            tools=[flight_tool]
+            tools=[flight_tool],
+            system_instruction=system_instruction
         )
     )
 
@@ -81,10 +95,15 @@ while True:
     )
 
 
+    # Check whether Gemini requested a tool
+    tool_called = False
+
     # Check whether Gemini requested a tool 
     for part in response.candidates[0].content.parts:
 
         if part.function_call:
+
+            tool_called = True
 
             function_call = part.function_call
 
@@ -126,8 +145,24 @@ while True:
                     model = "gemini-3.5-flash-lite",
                     contents=conversation_history,
                     config = types.GenerateContentConfig(
-                        tools=[flight_tool]
+                        tools=[flight_tool],
+                        system_instruction=system_instruction
+                    )
+                )
+
+                # print(f"Final_response\n {final_response} \n\n")
+                
+                # Store Gemini's Tool result based response
+                conversation_history.append(
+                    types.Content(
+                        role="model",
+                        parts=final_response.candidates[0].content.parts
                     )
                 )
 
                 print(f"Agent: {final_response.text}\n")
+
+
+    # If no tool was needed, Gemini already has the answer
+    if not tool_called:
+        print(f"\nAgent: {response.text}\n")
