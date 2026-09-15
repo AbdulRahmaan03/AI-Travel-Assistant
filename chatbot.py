@@ -59,6 +59,12 @@ flight_tool = types.Tool(
 )
 
 
+available_tools = {
+    "search_flights": search_flights
+}
+
+
+
 print("Travel AI Assistant")
 print("Type 'exit' to quit.\n")
 
@@ -114,14 +120,14 @@ while True:
             function_call = part.function_call
 
 
-            # Execute the requested Python function
-            if function_call.name == "search_flights":
+            # # Execute the requested Python function
+            # if function_call.name == "search_flights":
 
-                result = search_flights(
-                    origin=function_call.args["origin"],
-                    destination=function_call.args["destination"],
-                    date=function_call.args["date"]
-                )
+            #     result = search_flights(
+            #         origin=function_call.args["origin"],
+            #         destination=function_call.args["destination"],
+            #         date=function_call.args["date"]
+            #     )
 
                 # print("Tool requested:")
                 # print(function_call.name)
@@ -130,43 +136,53 @@ while True:
                 # print(result)
 
 
-                # Give the tool result back to Gemini
-                tool_response = types.Part.from_function_response(
-                    name=function_call.name,
-                    response={
-                        "result": result
-                    }
-                )
+            tool_name = function_call.name
 
-                # Store tool response
-                conversation_history.append(
-                        types.Content(
-                            role="user",
-                            parts=[tool_response]
-                        )
-                    )
+            tool = available_tools.get(tool_name)
 
-                # Ask Gemini to formulate the final answer
-                final_response = client.models.generate_content(
-                    model = "gemini-3.5-flash-lite",
-                    contents=conversation_history,
-                    config = types.GenerateContentConfig(
-                        tools=[flight_tool],
-                        system_instruction=system_instruction
-                    )
-                )
+            if tool is None:
+                print(f"Unknown tool requested: {tool_name}")
+                continue
 
-                # print(f"Final_response\n {final_response} \n\n")
-                
-                # Store Gemini's Tool result based response
-                conversation_history.append(
+            result = tool(**function_call.args)
+
+            # Give the tool result back to Gemini
+            tool_response = types.Part.from_function_response(
+                name=function_call.name,
+                response={
+                    "result": result
+                }
+            )
+
+            # Store tool response
+            conversation_history.append(
                     types.Content(
-                        role="model",
-                        parts=final_response.candidates[0].content.parts
+                        role="user",
+                        parts=[tool_response]
                     )
                 )
 
-                print(f"Agent: {final_response.text}\n")
+            # Ask Gemini to formulate the final answer
+            final_response = client.models.generate_content(
+                model = "gemini-3.5-flash-lite",
+                contents=conversation_history,
+                config = types.GenerateContentConfig(
+                    tools=[flight_tool],
+                    system_instruction=system_instruction
+                )
+            )
+
+            # print(f"Final_response\n {final_response} \n\n")
+            
+            # Store Gemini's Tool result based response
+            conversation_history.append(
+                types.Content(
+                    role="model",
+                    parts=final_response.candidates[0].content.parts
+                )
+            )
+
+            print(f"Agent: {final_response.text}\n")
 
 
     # If no tool was needed, Gemini already has the answer
