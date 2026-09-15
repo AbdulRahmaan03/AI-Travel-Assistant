@@ -57,3 +57,30 @@ def search_hotels(city, check_in, check_out):
     ]
 
     return hotels
+
+def search_activities(city, date):
+    activities = [
+        {
+            "name": "London Eye",
+            "city": "London",
+            "price": 150,
+            "currency": "AED",
+            "duration_hours": 1
+        },
+        {
+            "name": "Tower of London Tour",
+            "city": "London",
+            "price": 120,
+            "currency": "AED",
+            "duration_hours": 2
+        },
+        {
+            "name": "Thames River Cruise",
+            "city": "London",
+            "price": 90,
+            "currency": "AED",
+            "duration_hours": 1.5
+        }
+    ]
+
+    return activities

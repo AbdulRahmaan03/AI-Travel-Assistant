@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from tools import search_flights, search_hotels
+from tools import search_flights, search_hotels, search_activities
 
 from datetime import date
 
@@ -24,11 +24,12 @@ Today's date is {today}.
 
 Rules:
 - If the user gives a travel date without a year, assume the next upcoming occurrence.
-- Use the available travel tools when flight or hotel information is required.
+- Use the available travel tools when flight, hotel, or activity information is required.
 - Never invent travel information.
 - Only state information that is present in the tool results.
 - Use search_flights for flight searches.
 - Use search_hotels for hotel searches.
+- Use search_activities for activities and things to do.
 """
 
 
@@ -79,15 +80,39 @@ search_hotels_declaration = types.FunctionDeclaration(
     )
 )
 
+
+search_activities_declaration = types.FunctionDeclaration(
+    name="search_activities",
+    description="Search for activities and things to do in a city on a specific date.",
+    parameters=types.Schema(
+        type="OBJECT",
+        properties={
+            "city": types.Schema(
+                type="STRING",
+                description="City where the activity takes place, for example London."
+            ),
+            "date": types.Schema(
+                type="STRING",
+                description="Date of the activity in YYYY-MM-DD format."
+            ),
+        },
+        required=["city", "date"],
+    ),
+)
+
+
+
 travel_tools = types.Tool(
     function_declarations=[search_flights_declaration,
-                           search_hotels_declaration]
+                           search_hotels_declaration,
+                           search_activities_declaration]
 )
 
 
 available_tools = {
     "search_flights": search_flights,
-    "search_hotels": search_hotels
+    "search_hotels": search_hotels,
+    "search_activities": search_activities
 }
 
 
